@@ -50,6 +50,31 @@ app.post("/api/shorten", async (req: Request, res: Response) => {
   res.status(201).json({ url: `${req.headers.host}/${shortCode}` });
 });
 
+app.get("/api/analytics/:shortCode", async (req, res) => {
+  const { shortCode } = req.params;
+
+  const url = await prisma.url.findUnique({
+    where: { shortCode },
+    include: { visits: true },
+  });
+
+  if (!url) {
+    return res.status(404).json({ error: "URL not found" });
+  }
+
+  res.status(200).json({
+    originalUrl: url.originalUrl,
+    clicks: url.clicks,
+    visits: url.visits.map((visit) => ({
+      ip: visit.ip,
+      userAgent: visit.userAgent,
+      referrer: visit.referrer,
+      location: visit.location,
+      timestamp: visit.createdAt,
+    })),
+  });
+});
+
 app.get("/:shortCode", async (req, res) => {
   const { shortCode } = req.params;
 
