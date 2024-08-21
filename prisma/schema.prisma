@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Url {
+  id          String    @id @default(cuid())
+  originalUrl String
+  shortCode   String    @unique
+  customCode  String?   @unique
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime?
+  clicks      Int       @default(0)
+  visits      Visit[]
+  password    String?
+  @@map("urls")
+}
+
+model Visit {
+  id        String   @id @default(cuid())
+  urlId     String   @map("url_id")
+  ip        String?
+  userAgent String?  @map("user_agent")
+  referrer  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  location  String?
+  url       Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+
+  @@index([urlId])
+  @@map("visits")
+}
