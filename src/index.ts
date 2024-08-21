@@ -50,6 +50,44 @@ app.post("/api/shorten", async (req: Request, res: Response) => {
   res.status(201).json({ url: `${req.headers.host}/${shortCode}` });
 });
 
+app.get("/:shortCode", async (req, res) => {
+  const { shortCode } = req.params;
+
+  const url = await prisma.url.findUnique({ where: { shortCode } });
+
+  if (!url || (url.expiresAt && new Date() > url.expiresAt)) {
+    return res.status(404).json({ error: "URL not found or expired" });
+  }
+
+  if (url.password) {
+    const { password } = req.query as { password: string };
+
+    if (!password || !(await bcrypt.compare(password, url.password))) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+  }
+
+  await prisma.visit.create({
+    data: {
+      urlId: url.id,
+      ip: (req.headers["x-forwarded-for"] ||
+        req.socket.remoteAddress) as string,
+      userAgent: req.headers["user-agent"],
+      referrer: req.headers.referer,
+      location: geoip.lookup(
+        (req.headers["x-forwarded-for"] || req.socket.remoteAddress) as string
+      )?.country,
+    },
+  });
+
+  await prisma.url.update({
+    where: { id: url.id },
+    data: { clicks: { increment: 1 } },
+  });
+
+  res.redirect(url.originalUrl);
+});
+
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
 });
