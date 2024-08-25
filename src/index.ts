@@ -27,6 +27,23 @@ app.get("/", (_, res: Response) => {
   });
 });
 
+app.get("/api/geo", async (req: Request, res: Response) => {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const geo = geoip.lookup(ip as string);
+
+  res.send({
+    geo: {
+      city: geo?.city,
+      country: geo?.country,
+      countryRegion: geo?.region,
+      timezone: geo?.timezone,
+      latitude: geo?.ll?.[0],
+      longitude: geo?.ll?.[1],
+    },
+    ip,
+  });
+});
+
 app.get("/api/qr/generate", async (req: Request, res: Response) => {
   const url = req.query.url as string;
   const download = (req.query.download as string) === "true";
