@@ -1,5 +1,5 @@
 {
-  "name": "flavorqueste-url-shortener",
+  "name": "flavorqueste-api-functions",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -36,7 +36,7 @@
     "@types/shortid": "^0.0.32",
     "concurrently": "^8.2.2",
     "nodemon": "^3.1.4",
-    "rimraf": "^6.0.1",
+    "rimraf": "5",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   }
