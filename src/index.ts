@@ -45,7 +45,7 @@ app.get("/api/geo", async (req: Request, res: Response) => {
 });
 
 app.get("/api/qr/generate", async (req: Request, res: Response) => {
-  const url = req.query.url as string;
+  let url = req.query.url as string;
   const download = (req.query.download as string) === "true";
   const filename = (req.query.filename as string) || "qr-code.png";
 
@@ -54,6 +54,8 @@ app.get("/api/qr/generate", async (req: Request, res: Response) => {
   }
 
   try {
+    url = url.replace(/\/$/, "");
+
     const parsedUrl = new URL(url);
     if (!parsedUrl.hostname.includes("flavorqueste.com")) {
       return res.status(400).send("URL must be from https://flavorqueste.com/");
