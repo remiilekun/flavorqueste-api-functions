@@ -9,6 +9,7 @@ export type GeoResult = {
   timezone?: string;
   latitude?: number;
   longitude?: number;
+  source?: "cf" | "iplocate" | "geoip";
 };
 
 const CACHE_TTL_SECONDS = 60 * 60 * 24;
@@ -69,13 +70,14 @@ export const getCloudflareGeoFromHeaders = (req: Request): GeoResult | null => {
     return null;
   }
 
-  const result = {
+  const result: GeoResult = {
     city: Array.isArray(city) ? city[0] : city,
     country: Array.isArray(country) ? country[0] : country,
     countryRegion: Array.isArray(region) ? region[0] : region,
     timezone: Array.isArray(timezone) ? timezone[0] : timezone,
     latitude,
     longitude,
+    source: "cf",
   };
   log.debug("Cloudflare geo headers resolved", result);
   return result;
@@ -87,13 +89,14 @@ const lookupGeoLite = (ip: string): GeoResult | null => {
     log.debug("GeoIP Lite lookup miss", { ip });
     return null;
   }
-  const result = {
+  const result: GeoResult = {
     city: geo.city,
     country: geo.country,
     countryRegion: geo.region,
     timezone: geo.timezone,
     latitude: geo.ll?.[0],
     longitude: geo.ll?.[1],
+    source: "geoip",
   };
   log.debug("GeoIP Lite lookup hit", { ip, result });
   return result;
@@ -159,6 +162,7 @@ export const lookupGeo = async (ip: string): Promise<GeoResult | null> => {
       timezone: data.time_zone,
       latitude: data.latitude,
       longitude: data.longitude,
+      source: "iplocate",
     };
 
     try {
