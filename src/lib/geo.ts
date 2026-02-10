@@ -22,10 +22,46 @@ const getForwardedIp = (value: string | string[] | undefined): string | null => 
 
 export const getRequestIp = (req: Request): string | null => {
   return (
+    getForwardedIp(req.headers["cf-connecting-ip"]) ||
     getForwardedIp(req.headers["x-forwarded-for"]) ||
     req.socket.remoteAddress ||
     null
   );
+};
+
+const parseNumber = (value: string | string[] | undefined): number | undefined => {
+  if (!value) return undefined;
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+export const getCloudflareGeoFromHeaders = (req: Request): GeoResult | null => {
+  const city = req.headers["cf-ipcity"];
+  const country = req.headers["cf-ipcountry"];
+  const region = req.headers["cf-region"];
+  const timezone = req.headers["cf-timezone"];
+  const latitude = parseNumber(req.headers["cf-iplatitude"]);
+  const longitude = parseNumber(req.headers["cf-iplongitude"]);
+
+  const hasAny =
+    city ||
+    country ||
+    region ||
+    timezone ||
+    latitude !== undefined ||
+    longitude !== undefined;
+
+  if (!hasAny) return null;
+
+  return {
+    city: Array.isArray(city) ? city[0] : city,
+    country: Array.isArray(country) ? country[0] : country,
+    countryRegion: Array.isArray(region) ? region[0] : region,
+    timezone: Array.isArray(timezone) ? timezone[0] : timezone,
+    latitude,
+    longitude,
+  };
 };
 
 const lookupGeoLite = (ip: string): GeoResult | null => {
@@ -102,4 +138,12 @@ export const lookupGeo = async (ip: string): Promise<GeoResult | null> => {
     }
     return fallback;
   }
+};
+
+export const getRequestGeo = async (
+  req: Request
+): Promise<{ ip: string | null; geo: GeoResult | null }> => {
+  const ip = getRequestIp(req);
+  const geo = getCloudflareGeoFromHeaders(req) || (ip ? await lookupGeo(ip) : null);
+  return { ip, geo };
 };

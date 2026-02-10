@@ -1,9 +1,8 @@
 import { Request, Response } from "express";
-import { getRequestIp, lookupGeo } from "../lib/geo";
+import { getRequestGeo } from "../lib/geo";
 
 export const getGeo = async (req: Request, res: Response) => {
-  const ip = getRequestIp(req);
-  const geo = ip ? await lookupGeo(ip) : null;
+  const { ip, geo } = await getRequestGeo(req);
 
   res.send({
     geo: {

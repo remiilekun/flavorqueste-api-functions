@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import shortid from "shortid";
 import prisma from "../prisma/client";
-import { getRequestIp, lookupGeo } from "../lib/geo";
+import { getRequestGeo } from "../lib/geo";
 
 export const shortenUrl = async (req: Request, res: Response) => {
   const { originalUrl, customCode, expiresAt, password } = req.body;
@@ -71,8 +71,7 @@ export const redirectUrl = async (req: Request, res: Response) => {
     }
   }
 
-  const ip = getRequestIp(req);
-  const geo = ip ? await lookupGeo(ip) : null;
+  const { ip, geo } = await getRequestGeo(req);
 
   await prisma.visit.create({
     data: {
