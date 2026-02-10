@@ -1,18 +1,18 @@
 import { Request, Response } from "express";
-import geoip from "geoip-lite";
+import { getRequestIp, lookupGeo } from "../lib/geo";
 
 export const getGeo = async (req: Request, res: Response) => {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-  const geo = geoip.lookup(ip as string);
+  const ip = getRequestIp(req);
+  const geo = ip ? await lookupGeo(ip) : null;
 
   res.send({
     geo: {
       city: geo?.city,
       country: geo?.country,
-      countryRegion: geo?.region,
+      countryRegion: geo?.countryRegion,
       timezone: geo?.timezone,
-      latitude: geo?.ll?.[0],
-      longitude: geo?.ll?.[1],
+      latitude: geo?.latitude,
+      longitude: geo?.longitude,
     },
     ip,
   });

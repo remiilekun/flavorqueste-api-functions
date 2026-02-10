@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import shortid from "shortid";
-import geoip from "geoip-lite";
 import prisma from "../prisma/client";
+import { getRequestIp, lookupGeo } from "../lib/geo";
 
 export const shortenUrl = async (req: Request, res: Response) => {
   const { originalUrl, customCode, expiresAt, password } = req.body;
@@ -71,16 +71,16 @@ export const redirectUrl = async (req: Request, res: Response) => {
     }
   }
 
+  const ip = getRequestIp(req);
+  const geo = ip ? await lookupGeo(ip) : null;
+
   await prisma.visit.create({
     data: {
       urlId: url.id,
-      ip: (req.headers["x-forwarded-for"] ||
-        req.socket.remoteAddress) as string,
+      ip: ip || undefined,
       userAgent: req.headers["user-agent"],
       referrer: req.headers.referer,
-      location: geoip.lookup(
-        (req.headers["x-forwarded-for"] || req.socket.remoteAddress) as string
-      )?.country,
+      location: geo?.country,
     },
   });
 
